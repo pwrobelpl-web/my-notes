@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#f5f6f8" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="My Notes" />
+<title>My Notes</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--text:#17181a;--muted:#777b83;--line:#e8e9ed;--accent:#111;--warn:#fff4d8;--warnText:#7a5700;--danger:#ffe7e7;--dangerText:#8b1e1e}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Segoe UI,Roboto,sans-serif;color:var(--text)}
+.app{max-width:720px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(90px + env(safe-area-inset-bottom))}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.header h1{font-size:32px;line-height:1.05;margin:0}.small{color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:8px;overflow:auto;padding-bottom:8px}.tab{border:0;background:#e9eaee;padding:10px 14px;border-radius:999px;font-weight:700;white-space:nowrap}.tab.active{background:#111;color:#fff}
+.card{background:var(--card);border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.row{display:flex;gap:10px;align-items:center}.grow{flex:1}.title{font-size:18px;font-weight:800}.meta{font-size:13px;color:var(--muted);margin-top:4px}.details{margin:12px 0 0;padding-left:4px}.detail{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line)}
+.btn{border:0;border-radius:12px;padding:10px 12px;font-weight:700;background:#eceef2}.btn.primary{background:#111;color:#fff}.btn.danger{background:#ffe7e7;color:#8b1e1e}.icon{width:42px;height:42px;border-radius:14px;border:0;background:#eceef2;font-size:20px}.check{width:24px;height:24px}
+.warn{background:var(--warn);color:var(--warnText);padding:12px;border-radius:14px;font-size:14px;margin-top:10px}.dangerbox{background:var(--danger);color:var(--dangerText);padding:12px;border-radius:14px;font-size:14px;margin-top:10px}
+.fab{position:fixed;right:22px;bottom:calc(22px + env(safe-area-inset-bottom));width:66px;height:66px;border-radius:50%;border:0;background:#111;color:#fff;font-size:29px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.28);display:none;align-items:flex-end;z-index:20}.sheet.open{display:flex}.panel{width:100%;max-height:90vh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:16px;padding-bottom:calc(18px + env(safe-area-inset-bottom))}.handle{width:40px;height:5px;border-radius:4px;background:#d7d7dc;margin:0 auto 14px}
+label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}.input, textarea, select{width:100%;font:inherit;border:1px solid #dfe1e6;border-radius:12px;padding:12px;background:#fff}textarea{min-height:90px;resize:vertical}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions{display:flex;gap:8px;margin-top:14px}.actions .btn{flex:1}
+.empty{text-align:center;color:var(--muted);padding:30px 12px}.micline{display:flex;gap:8px}.micline textarea{flex:1}.mic{width:50px;border:0;border-radius:14px;background:#111;color:#fff;font-size:22px}.listinput{display:flex;gap:8px}.listinput input{flex:1}.pill{display:inline-block;background:#eef0f3;padding:5px 8px;border-radius:999px;font-size:12px;margin:3px 4px 0 0}.done .title{text-decoration:line-through;opacity:.5}.done .meta,.done .details{opacity:.5}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header"><div><h1>My Notes</h1><div class="small" id="todayLabel"></div></div><button class="icon" id="settingsBtn">⚙️</button></div>
+  <div class="tabs" id="tabs"></div>
+  <div id="warningArea"></div>
+  <div id="list"></div>
+</div>
+<button class="fab" id="addBtn">＋</button>
+
+<div class="sheet" id="sheet"><div class="panel"><div class="handle"></div>
+  <div class="row"><div class="grow"><div class="title" id="sheetTitle">Nowe zadanie</div><div class="small">Możesz wpisać lub podyktować.</div></div><button class="icon" id="closeBtn">✕</button></div>
+  <label>Powiedz / wpisz wszystko jednym zdaniem</label>
+  <div class="micline"><textarea id="quickText" placeholder="Np. W środę o 10 zadzwoń do hydraulika. Powiedz mu o przecieku i zapytaj o cenę."></textarea><button class="mic" id="micBtn">🎙️</button></div>
+  <button class="btn" id="parseBtn" style="width:100%;margin-top:8px">Rozpoznaj</button>
+
+  <label>Tytuł</label><input class="input" id="titleInput" placeholder="Np. Zadzwoń do hydraulika" />
+  <div class="grid"><div><label>Data</label><input class="input" type="date" id="dateInput" /></div><div><label>Godzina</label><input class="input" type="time" id="timeInput" /></div></div>
+  <div class="grid"><div><label>Czas trwania</label><select id="durationInput"><option value="0">Bez czasu</option><option value="30">30 min</option><option value="60" selected>1 godz.</option><option value="90">1,5 godz.</option><option value="120">2 godz.</option><option value="180">3 godz.</option></select></div><div><label>Typ</label><select id="typeInput"><option value="task">Zadanie</option><option value="event">Wydarzenie</option><option value="shopping">Zakupy</option><option value="note">Notatka</option></select></div></div>
+
+  <label>Szczegóły / podlista</label>
+  <div class="listinput"><input class="input" id="detailInput" placeholder="Dodaj punkt" /><button class="btn" id="addDetailBtn">Dodaj</button></div>
+  <div id="detailPreview"></div>
+  <div id="conflictBox"></div>
+  <div class="actions"><button class="btn" id="cancelBtn">Anuluj</button><button class="btn primary" id="saveBtn">Zapisz</button></div>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const storageKey='myNotes_v1';
+let items=JSON.parse(localStorage.getItem(storageKey)||'[]');
+let activeTab='today', editingId=null, tempDetails=[];
+const tabs=[['today','Dzisiaj'],['tomorrow','Jutro'],['week','Ten tydzień'],['calendar','Wszystko'],['notes','Notatki'],['done','Zrobione']];
+function save(){localStorage.setItem(storageKey,JSON.stringify(items));render()}
+function isoDate(d){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+const now=new Date(); $('todayLabel').textContent=now.toLocaleDateString('pl-PL',{weekday:'long',day:'numeric',month:'long'});
+function renderTabs(){ $('tabs').innerHTML=tabs.map(([k,v])=>`<button class="tab ${activeTab===k?'active':''}" data-tab="${k}">${v}</button>`).join(''); [...document.querySelectorAll('.tab')].forEach(b=>b.onclick=()=>{activeTab=b.dataset.tab;renderTabs();render()}); }
+function withinWeek(date){const d=new Date(date+'T12:00'); const a=new Date(); a.setHours(0,0,0,0); const b=new Date(a); b.setDate(b.getDate()+7); return d>=a&&d<b}
+function filterItems(){const t=isoDate(new Date()), tm=(()=>{let d=new Date();d.setDate(d.getDate()+1);return isoDate(d)})();return items.filter(i=>{if(activeTab==='done')return i.done;if(i.done)return false;if(activeTab==='today')return i.date===t;if(activeTab==='tomorrow')return i.date===tm;if(activeTab==='week')return i.date&&withinWeek(i.date);if(activeTab==='notes')return i.type==='note'||!i.date;if(activeTab==='calendar')return true;return true}).sort((a,b)=>(a.date||'9999')+(a.time||'99:99') > (b.date||'9999')+(b.time||'99:99')?1:-1)}
+function fmtDate(i){if(!i.date)return 'Bez daty'; const d=new Date(i.date+'T12:00'); const rel=i.date===isoDate(new Date())?'Dzisiaj':(()=>{let x=new Date();x.setDate(x.getDate()+1);return i.date===isoDate(x)?'Jutro':''})(); return `${rel?rel+' • ':''}${d.toLocaleDateString('pl-PL',{weekday:'short',day:'numeric',month:'short'})}${i.time?' • '+i.time:''}`}
+function render(){const arr=filterItems(); $('list').innerHTML=arr.length?arr.map(cardHtml).join(''):'<div class="empty">Brak wpisów w tym widoku.</div>'; document.querySelectorAll('[data-done]').forEach(x=>x.onchange=()=>{const i=items.find(z=>z.id===x.dataset.done);i.done=x.checked;save()});document.querySelectorAll('[data-edit]').forEach(x=>x.onclick=()=>openSheet(x.dataset.edit));document.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>{items=items.filter(z=>z.id!==x.dataset.del);save()});}
+function cardHtml(i){return `<div class="card ${i.done?'done':''}"><div class="row"><input class="check" type="checkbox" data-done="${i.id}" ${i.done?'checked':''}><div class="grow"><div class="title">${esc(i.title||'(bez tytułu)')}</div><div class="meta">${fmtDate(i)}${i.duration?` • ${i.duration} min`:''}</div></div><button class="icon" data-edit="${i.id}">✎</button></div>${(i.details||[]).length?`<div class="details">${i.details.map(d=>`<div class="detail"><span>•</span><span>${esc(d)}</span></div>`).join('')}</div>`:''}<div class="row" style="margin-top:10px"><span class="pill">${labelType(i.type)}</span><button class="btn danger" style="margin-left:auto" data-del="${i.id}">Usuń</button></div></div>`}
+function labelType(t){return {task:'Zadanie',event:'Wydarzenie',shopping:'Zakupy',note:'Notatka'}[t]||'Wpis'}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function openSheet(id=null){editingId=id; tempDetails=[]; $('quickText').value=''; if(id){const i=items.find(x=>x.id===id);$('sheetTitle').textContent='Edytuj wpis';$('titleInput').value=i.title||'';$('dateInput').value=i.date||'';$('timeInput').value=i.time||'';$('durationInput').value=String(i.duration||0);$('typeInput').value=i.type||'task';tempDetails=[...(i.details||[])];}else{$('sheetTitle').textContent='Nowy wpis';$('titleInput').value='';$('dateInput').value='';$('timeInput').value='';$('durationInput').value='60';$('typeInput').value='task';tempDetails=[]} renderDetails();checkConflict();$('sheet').classList.add('open')}
+function closeSheet(){$('sheet').classList.remove('open')}
+function renderDetails(){$('detailPreview').innerHTML=tempDetails.map((d,idx)=>`<span class="pill">${esc(d)} <button onclick="removeDetail(${idx})" style="border:0;background:none">×</button></span>`).join('')}
+window.removeDetail=i=>{tempDetails.splice(i,1);renderDetails()}
+function addDetail(){const v=$('detailInput').value.trim();if(v){tempDetails.push(v);$('detailInput').value='';renderDetails()}}
+function parseNatural(){const text=$('quickText').value.trim(); if(!text)return; const lower=text.toLowerCase(); let date=''; const base=new Date(); if(/jutro/.test(lower)){base.setDate(base.getDate()+1);date=isoDate(base)} else if(/dzisiaj/.test(lower)){date=isoDate(base)} else {const days={niedziel:0,poniedział:1,wtorek:2,środ:3,czwartek:4,piątek:5,sobot:6}; for(const k in days){if(lower.includes(k)){let d=new Date();let diff=(days[k]-d.getDay()+7)%7;if(diff===0)diff=7;d.setDate(d.getDate()+diff);date=isoDate(d);break}}}
+ const tm=lower.match(/(?:o\s*)?(\d{1,2})[:\.](\d{2})|(?:o\s+)(\d{1,2})(?!\d)/); if(tm){let h=tm[1]||tm[3],m=tm[2]||'00';$('timeInput').value=String(h).padStart(2,'0')+':'+m}
+ $('dateInput').value=date;
+ let parts=text.split(/[.!?]\s+/).filter(Boolean); let first=parts.shift()||text; first=first.replace(/\b(dzisiaj|jutro|w\s+(poniedziałek|wtorek|środę|czwartek|piątek|sobotę|niedzielę))\b/ig,'').replace(/\bo\s*\d{1,2}([:.]\d{2})?\b/ig,'').trim(); $('titleInput').value=first.charAt(0).toUpperCase()+first.slice(1);
+ tempDetails=parts.map(x=>x.trim()).filter(Boolean);
+ if(/zakup|kupić|kup /.test(lower))$('typeInput').value='shopping'; else if(/zadzwoń|spotkanie|wycena|lotnisko|wizyta/.test(lower))$('typeInput').value='event';
+ renderDetails();checkConflict(); }
+function timeToMin(t){if(!t)return null;const [h,m]=t.split(':').map(Number);return h*60+m}
+function conflicts(candidate){if(!candidate.date||!candidate.time||!candidate.duration)return[];const s=timeToMin(candidate.time),e=s+Number(candidate.duration);return items.filter(i=>i.id!==editingId&&i.date===candidate.date&&i.time&&i.duration&&!i.done).filter(i=>{const is=timeToMin(i.time),ie=is+Number(i.duration);return Math.max(s,is)<Math.min(e,ie)} )}
+function checkConflict(){const c={date:$('dateInput').value,time:$('timeInput').value,duration:Number($('durationInput').value)};const x=conflicts(c);$('conflictBox').innerHTML=x.length?`<div class="dangerbox"><b>⚠️ Możliwa kolizja</b><br>${x.map(i=>`${esc(i.title)} — ${i.time}`).join('<br>')}<br><span class="small">Sprawdź godziny przed zapisaniem.</span></div>`:''}
+['dateInput','timeInput','durationInput'].forEach(id=>$(id).addEventListener('input',checkConflict));
+$('addBtn').onclick=()=>openSheet();$('closeBtn').onclick=$('cancelBtn').onclick=closeSheet;$('addDetailBtn').onclick=addDetail;$('detailInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addDetail()}});$('parseBtn').onclick=parseNatural;
+$('saveBtn').onclick=()=>{const title=$('titleInput').value.trim()||$('quickText').value.trim(); if(!title){alert('Dodaj tytuł.');return} const obj={id:editingId||crypto.randomUUID(),title,date:$('dateInput').value,time:$('timeInput').value,duration:Number($('durationInput').value),type:$('typeInput').value,details:[...tempDetails],done:false,createdAt:Date.now()}; if(editingId){const old=items.find(x=>x.id===editingId);obj.done=old.done;items=items.map(x=>x.id===editingId?obj:x)}else items.push(obj);save();closeSheet()}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition; let rec=null;if(SR){rec=new SR();rec.lang='pl-PL';rec.continuous=false;rec.interimResults=false;rec.onresult=e=>{$('quickText').value=e.results[0][0].transcript;parseNatural()};rec.onerror=()=>alert('Nie udało się rozpoznać mowy. Spróbuj ponownie.');$('micBtn').onclick=()=>rec.start()}else{$('micBtn').onclick=()=>alert('Rozpoznawanie mowy nie jest dostępne w tej przeglądarce.')}
+renderTabs();render();
+</script>
+</body></html>
